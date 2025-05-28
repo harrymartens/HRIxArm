@@ -1,0 +1,22 @@
+Metadata-Version: 2.4
+Name: xArm-Python-SDK
+Version: 1.15.0
+Summary: Python SDK for xArm
+Author: Vinman
+Author-email: vinman@ufactory.cc
+License: MIT
+License-File: LICENSE
+Dynamic: author
+Dynamic: author-email
+Dynamic: description
+Dynamic: license
+Dynamic: license-file
+Dynamic: summary
+
+Python SDK for UFACTORY robotic arm 850, xArm 5/6/7, and Lite6. 
+
+:Website: https://www.ufactory.cc/
+:Github: https://github.com/xArm-Developer/xArm-Python-SDK
+:Docs: http://docs.api.ufactory.cc
+:Release Note: https://github.com/xArm-Developer/xArm-Python-SDK/blob/master/README.md#update-summary
+:Bug Reports: support@ufactory.cc
