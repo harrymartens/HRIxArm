@@ -11,6 +11,8 @@ from ImageToVectorConversion.processImage import processImage
 from RoboticPathMovement.robotConfig import RoboticArm
 from RoboticPathMovement.moveRobot import executeDrawingCommands
 
+from ImageGeneration.generateImageOpenAI import generate_image_gpt_image_1
+
 
 
 import cv2
@@ -25,40 +27,29 @@ def encode_image(image_path):
         return base64.b64encode(image_file.read()).decode("utf-8")
 
 
-
-def generate_image_to_image(original_image, prompt):
-    response = client.responses.create(
-        model="gpt-4o",
-        input=[
-            {
-                "role": "user",
-                "content": [
-                    {"type": "input_text", "text": f"Change the image to reflect the following prompt: {prompt}. Imagine you are an innovative, distinctive artist who applies peoples requests, expanding on them with immense detail to create unique works of art.  Make sure the image is drawable using a marker with a 5mm tip. "},
-                    {
-                        "type": "input_image",
-                        "image_url": f"data:image/jpeg;base64,{original_image}",
-                    }
-                    ],
-            }
-        ],
-        tools=[{"type": "image_generation"}],
-    )
-        
-    image_data = [
-        output.result
-        for output in response.output
-        if output.type == "image_generation_call"
-    ]
-        
-    if image_data:
-        image_base64 = image_data[0]
-        with open("genImg.png", "wb") as f:
-            f.write(base64.b64decode(image_base64))
-        return image_base64, response
-    return None, None
+def generateImage():
+    prompt = receiveInput("What would you like to draw?")
+    
+    print("Generating image...")
+    image_base64 = generate_image_gpt_image_1(prompt)
     
     
-def main():      
+    
+def main():   
+    
+    while True:   
+        start = receiveInput("Would you like to generate a new image, or edit an existing?")
+        
+        if "draw" in start.lower():
+            generateImage()
+            
+        elif "edit" in start.lower():
+            
+        else:
+            print("Please enter a valid option: 'draw' or 'edit'.")
+            continue
+    
+    
     #Capture current drawing
     image_path = "Images/InputImages/horse.png"
     base64_image = encode_image(image_path)
@@ -68,7 +59,7 @@ def main():
         user_prompt = receiveInput("How would you like to alter your image?")
 
         #Generate new image based on user prompt
-        image_base64, response = generate_image_to_image(base64_image, user_prompt)
+        image_base64, response = generate_image_gpt_image_1(user_prompt)
         generatedImage = cv2.imread("genImg.png")
 
         #Process generated image to vector format

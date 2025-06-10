@@ -120,13 +120,12 @@ class RoboticArm:
             # Adjust the z value: if the mark is too light, we lower the pen (z becomes smaller),
             # if too deep, we raise the pen (z becomes larger).
             z = self.zLowered + correction
-            self.arm.set_position(x, y, z, self.roll, self.pitch, self.yaw, speed=self.speed)
+            self.arm.set_position(x, y, z, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=500)
         else:
-            self.arm.set_position(x, y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed)
+            self.arm.set_position(x, y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=500)
             
     def reset_position(self):
         self.arm.set_position(-10, 150, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed)
-
 
     def centre_position(self):
         self.arm.set_position(self.max_x - self.min_x, 0, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed)

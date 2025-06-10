@@ -35,6 +35,7 @@ def capturePhoto():
 
     cap.release()
     cv2.destroyAllWindows()
+    
     return frame
 
 

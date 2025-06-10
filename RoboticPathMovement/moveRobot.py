@@ -81,24 +81,9 @@ def executeDrawingCommands(arm, segments, img_shape):
         
         # After finishing the segment, lift the pen.
         arm.set_position(x_robot, y_robot, draw=False)
-
-
-def draw_corner_dots(arm):
-    """
-    Draws a single dot at each corner of the robot's drawing canvas.
-    """
-    # Define the four canvas corners
-    corners = [
-        (arm.min_x, arm.min_y),
-        (arm.min_x, arm.max_y),
-        (arm.max_x, arm.min_y),
-        (arm.max_x, arm.max_y),
-    ]
-
-    for x, y in corners:
-        # Move to corner with pen up
-        arm.set_position(x, y, draw=False)
-        # Lower pen to make a dot
-        arm.set_position(x, y, draw=True)
-        # Lift pen after dot
-        arm.set_position(x, y, draw=False)
+        
+def draw_contours(arm, contours, lineImageShape):
+        arm.centre_position()
+        executeDrawingCommands(arm, contours, lineImageShape)
+        arm.centre_position()
+        arm.reset_position()
