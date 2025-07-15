@@ -51,6 +51,12 @@ def base64_to_mat(base64_string):
         raise ValueError("Decoding failed")
     return image
 
+def base64_to_buffer(base64_image):
+    img_bytes = b64decode(base64_image)
+    image_buffer = BytesIO(img_bytes)
+    image_buffer.name = "image.png"
+    return image_buffer
+
 def show_images(*images, titles=None):
     for i, img in enumerate(images):
         title = titles[i] if titles else f"Image {i+1}"
@@ -59,8 +65,3 @@ def show_images(*images, titles=None):
     cv2.destroyAllWindows()
     
     
-def base64_to_buffer(base64_image):
-    img_bytes = b64decode(base64_image)
-    image_buffer = BytesIO(img_bytes)
-    image_buffer.name = "image.png"
-    return image_buffer

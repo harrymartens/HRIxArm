@@ -164,12 +164,10 @@ def generate_image_gpt_image_1(prompt):
     Generates an image using the gpt-image-1 model based on the original image and prompt.
     Returns the generated image in base64 format.
     """
-    print(prompt)
     result = client.images.generate(
         model="gpt-image-1",
         prompt=prompt + """
-        -Drawn with a 5mm black marker, consisting of sharp black lines on a white background. 
-        -Created by a professional artist
+        -Drawn with a black 5mm marker
         """,
         quality="medium",
         size="1024x1536",
@@ -191,6 +189,7 @@ def edit_image_gpt_image_1(original_image, prompt, mask=None):
             image=original_image,
             mask=mask,
             prompt=prompt,
+            size="1024x1536",
         )
     else:
         response = client.images.edit(
@@ -200,6 +199,7 @@ def edit_image_gpt_image_1(original_image, prompt, mask=None):
             Make sure the entire image fits within the frame and is not cut off.
                         
             """,
+            size="1024x1536",
         )
         
     image_base64 = response.data[0].b64_json

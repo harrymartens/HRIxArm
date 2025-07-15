@@ -1,6 +1,9 @@
 import cv2
+from PIL import Image
+import numpy as np
 
-from HelperFunctions.helperFunctions import pil_to_mat
+
+from HelperFunctions.helperFunctions import base64_to_mat, pil_to_mat
 
 
 def scaleImage(image, target_width=200, target_height=200):
@@ -37,10 +40,38 @@ def flipImage(img):
 
 
 def imagePreprocessingPipeline(image):
-    
-    mat_image = pil_to_mat(image)
-    
+    """
+    Accepts either a base64 string or a PIL Image and processes it through
+    resizing, grayscale conversion, and smoothing.
+    """
+    if isinstance(image, str):
+        # assume base64
+        mat_image = base64_to_mat(image)
+    elif isinstance(image, Image.Image):
+        # assume PIL Image
+        mat_image = pil_to_mat(image)
+    elif isinstance(image, np.ndarray):
+        # already a mat
+        mat_image = image
+    else:
+        raise TypeError(f"Unsupported input type: {type(image)}")
+
     scaled_image = scaleImage(mat_image, 500, 500)
     gray_image = toGrayscale(scaled_image)
     smoothed_image = applyGaussianSmoothing(gray_image)
     return smoothed_image
+
+
+def binarize_drawing(image, threshold=128):
+    # Convert to grayscale
+    gray = toGrayscale(image)
+
+    # Apply Gaussian blur to smooth noise slightly (optional but recommended)
+    blurred = applyGaussianSmoothing(gray)
+
+    # Binarize using thresholding
+    _, binarized = cv2.threshold(blurred, threshold, 255, cv2.THRESH_BINARY)
+    cv2.imshow("Bin", binarized)
+    cv2.waitKey(0)
+
+    return binarized

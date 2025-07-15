@@ -6,11 +6,11 @@ client = OpenAI()
 
 from RoboticPathMovement.robotConfig import RoboticArm
 
-from AgenticAI.assistantTools import generate_drawing, edit_drawing, capture_image, draw_image
+from AgenticTools.assistantTools import generate_drawing, edit_drawing, capture_image, draw_image
 
 from UserInput.inputController import receiveInput
 
-# roboticArm = RoboticArm()
+roboticArm = RoboticArm()
 
 assistant = client.beta.assistants.create(
   name="Creative Drawing Robot",
@@ -50,7 +50,7 @@ assistant = client.beta.assistants.create(
         
         edit_image(user_prompt):
             Captures a photo of the current state of the canvas, before passing the image, along with the user's prompt to the openAI image editting API.
-            This generates changes to the photo of the existing drawing, before drawing these changes on the canvas.
+            This generates a new version of the existing artwork, based on the user prompt. It then erases the existing drawing and draws the new version on the canvas.
             
         capture drawing:
             Captures a photo of the current state of the canvas, and returns a description of what is depicted.
@@ -160,14 +160,14 @@ def generate_image(prompt: str) -> str:
     
     print("\nGENERARTING IMAGE...\n")
     
-    return generate_drawing(prompt, "roboticArm")
+    return generate_drawing(prompt, roboticArm)
 
 
 def edit_image(edit_prompt: str) -> str:
    
     print("\EDITTING IMAGE...\n")
 
-    return edit_drawing(edit_prompt, "roboticArm")
+    return edit_drawing(edit_prompt, roboticArm)
 
 
 def capture_drawing() -> str:
@@ -176,17 +176,8 @@ def capture_drawing() -> str:
 
     return capture_image()
 
-def draw_last_generated_image(img, prompt) -> str:
-   
-    print("\Drawing image...\n")
 
-    return draw_image(img, prompt, "roboticArm" )
-
-def main():
-    canvas_empty = True
-    most_recent_image = None
-    most_recent_prompt = ""
-    
+def main():    
     thread = client.beta.threads.create()
     print("Hello—I’m your creative robotic assistant with a 6-axis arm and a single-colour chalk marker.")
     print("I can brainstorm ideas, sketch concepts, or edit your images. What artistic idea would you like to explore today?")
@@ -238,20 +229,13 @@ def main():
                     elif fn_name == "edit_image":
                         edit_prompt = args.get("edit_prompt", "")
                         
-                        most_recent_prompt = user_prompt
+                        most_recent_prompt = edit_prompt
 
-                        if canvas_empty:
-                            result = generate_image(edit_prompt)
-                            tool_outputs.append({
-                                "tool_call_id": tool_call.id,
-                                "output": result
-                            })
-                        else:
-                            result = edit_image(edit_prompt)
-                            tool_outputs.append({
-                                "tool_call_id": tool_call.id,
-                                "output": result
-                            })
+                        result = edit_image(edit_prompt)
+                        tool_outputs.append({
+                            "tool_call_id": tool_call.id,
+                            "output": result
+                        })
 
                     elif fn_name == "capture_drawing":
                         result = capture_drawing()
@@ -260,12 +244,6 @@ def main():
                             "output": result
                         })
                         
-                    elif fn_name == "draw_last_generated_image":
-                        result = draw_last_generated_image(most_recent_image, most_recent_prompt)
-                        tool_outputs.append({
-                            "tool_call_id": tool_call.id,
-                            "output": result
-                        })
 
                 # 5) Submit the real outputs back to the assistant
                 run = client.beta.threads.runs.submit_tool_outputs_and_poll(

@@ -1,7 +1,8 @@
 from xarm.wrapper import XArmAPI
+import math
 
 class RoboticArm:
-    def __init__(self, ip='192.168.1.111'):
+    def __init__(self, ip='192.168.1.111', mode="marker"):
         self.arm = XArmAPI(ip)
         self.arm.clean_warn()
         self.arm.clean_error()
@@ -9,23 +10,43 @@ class RoboticArm:
         self.arm.motion_enable(True)
         self.arm.set_state(0)
         
-        # Height for marker
-        self.zLowered=135
-        
-        # Height for pen
-        # self.zLowered=158
+        if mode == "marker":
+            self.zLowered=135.5
+        elif mode == "erase":
+            self.zLowered=68
+        else:
+            self.zLowered=158
         
         self.zRaised=170
         self.roll=180
         self.pitch = 0
         self.yaw = 180
-        self.speed=100
+        self.speed=300
         
         self.min_x = 160  # 110 Maximum
         self.max_x = 375  
 
         self.min_y = -190
         self.max_y = 190
+        
+    def subdivide_line(self, p1, p2, max_step=0.05):
+        """
+        Break the line from p1=(x,y,z) to p2 into segments ≤ max_step length.
+        Returns list of intermediate points excluding p1.
+        """
+        dx, dy, dz = p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]
+        dist = math.sqrt(dx*dx + dy*dy + dz*dz)
+        if dist <= max_step:
+            return [p2]
+        steps = math.ceil(dist / max_step)
+        return [
+            (
+                p1[0] + dx * i/steps,
+                p1[1] + dy * i/steps,
+                p1[2] + dz * i/steps
+            ) for i in range(1, steps + 1)
+        ]
+
         
         
     def get_dimensions(self):
@@ -109,20 +130,87 @@ class RoboticArm:
 
         return correction
 
+    # def set_position(self, x, y, draw):
+    #     """
+    #     Adjust the z height based on the (x,y) location when drawing.
+    #     When not drawing, use the raised z height.
+    #     """
+    #     if draw:
+    #         # Get region-specific correction.
+    #         correction = self.get_z_correction(x, y)
+    #         # Adjust the z value: if the mark is too light, we lower the pen (z becomes smaller),
+    #         # if too deep, we raise the pen (z becomes larger).
+    #         z = self.zLowered + correction
+    #         ret = self.arm.set_position(x, y, z, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=500)
+    #     else:
+    #         ret = self.arm.set_position(x, y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=500)
+            
+    #     if ret != 0:
+    #         print(f"[ERROR] set_position failed, code: {ret}")
+    #         print(f"Error code: {self.arm.error_code}, Warning code: {self.arm.warn_code}")
+    
     def set_position(self, x, y, draw):
         """
-        Adjust the z height based on the (x,y) location when drawing.
-        When not drawing, use the raised z height.
+        Adjust z for draw or raised. Perform direct Cartesian move first;
+        on singularity (error code 24), subdivide path and retry each chunk,
+        falling back to joint-space for repeating singularities.
         """
+        # Determine target z
         if draw:
-            # Get region-specific correction.
             correction = self.get_z_correction(x, y)
-            # Adjust the z value: if the mark is too light, we lower the pen (z becomes smaller),
-            # if too deep, we raise the pen (z becomes larger).
             z = self.zLowered + correction
-            self.arm.set_position(x, y, z, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=500)
         else:
-            self.arm.set_position(x, y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=500)
+            z = self.zRaised
+
+        # Attempt direct Cartesian move
+        ret = self.arm.set_position(x, y, z,
+                                    self.roll, self.pitch, self.yaw,
+                                    speed=self.speed, mvacc=500)
+        if ret != 24:
+            # success or other error
+            if ret != 0:
+                print(f"[ERROR] set_position failed, code: {ret}")
+                print(f"Error code: {self.arm.error_code}, Warning code: {self.arm.warn_code}")
+            return ret
+
+        print("A SINGULARITY HAS OCCURED - RETRYING")
+
+        # Singularity encountered: subdivide path
+        current = self.arm.get_position()  # returns (x0,y0,z0,roll,pitch,yaw)
+        waypoints = self.subdivide_line(current[:3], (x, y, z))
+
+        # 3) Iterate waypoints
+        for wx, wy, wz in waypoints:
+            ret_wp = self.arm.set_position(
+                wx, wy, wz,
+                self.roll, self.pitch, self.yaw,
+                speed=self.speed, mvacc=500
+            )
+            if ret_wp == 24:
+                # still singular: compute IK and move via servo angles
+                pose = [wx, wy, wz, self.roll, self.pitch, self.yaw]
+                code, joints = self.arm.get_inverse_kinematics(
+                    pose,
+                    input_is_radian=False,
+                    return_is_radian=True
+                )
+                if code != 0:
+                    print(f"[ERROR] IK failed at ({wx:.3f},{wy:.3f},{wz:.3f}), code={code}")
+                    return code
+                ret_wp = self.arm.set_servo_angle(
+                    angle=joints,
+                    is_radian=True,
+                    speed=self.speed,
+                    mvacc=500,
+                    wait=False
+                )
+            if ret_wp not in (0, 24):
+                print(f"[ERROR] waypoint move to ({wx:.3f},{wy:.3f},{wz:.3f}) failed, code={ret_wp}")
+                return ret_wp
+
+        # All waypoints succeeded
+        return 0
+
             
     def reset_position(self):
         self.arm.set_position(-10, 150, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed)
