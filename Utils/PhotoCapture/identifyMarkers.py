@@ -66,8 +66,4 @@ def scanImageAndCrop(image):
     M = cv2.getPerspectiveTransform(ordered_corners.astype("float32"), dst)
     warped = cv2.warpPerspective(image, M, (width, height))
 
-    cv2.imshow("Warped Image", warped)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
     return warped

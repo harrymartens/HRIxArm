@@ -3,7 +3,7 @@ import numpy as np
 import random
 
 from .moveRobot import draw_contours
-from ImageToVectorConversion.openCVImageEditting import binarize_drawing
+from Utils.ImageToVectorConversion.openCVImageEditting import binarize_drawing
 
 def plan_eraser_centers(bin_img, rect_w, rect_h, step_ratio):
     """
@@ -35,6 +35,7 @@ def plan_eraser_centers(bin_img, rect_w, rect_h, step_ratio):
 def eraseImage(arm, img, eraser_w_px=50, eraser_h_px=30, step_ratio=0.5, visualize=True):
     bin_img = binarize_drawing(img)
     
+    bin_img = cv2.flip(bin_img, 0)
     
     # 2) Plan eraser centers and rectangles
     centers, rects = plan_eraser_centers(bin_img, eraser_w_px, eraser_h_px, step_ratio)
@@ -58,4 +59,4 @@ def eraseImage(arm, img, eraser_w_px=50, eraser_h_px=30, step_ratio=0.5, visuali
         cv2.waitKey(0)
         cv2.destroyWindow('Eraser Windows and Continuous Path')
     # 6) Erase via draw_contours abstraction
-    # draw_contours(arm, segments, bin_img.shape[:2])
+    draw_contours(arm, segments, bin_img.shape[:2])

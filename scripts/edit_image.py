@@ -1,5 +1,6 @@
 import cv2
 from pyfiglet import Figlet
+import time
 
 
 from Utils.ImageGeneration.generateImageOpenAI import edit_image_gpt_image_1
@@ -19,15 +20,24 @@ def main():
     print(f.renderText("Robot Drawer"))
     
     arm = RoboticArm()
+    arm.change_attachment_position()
+    
+    _ = receiveInput("Continue?")
+    arm.change_mode("erase")
+    
+    arm.centre_position()
     arm.reset_position()
     
+    time.sleep(15)
+
+    
     photo = capturePhoto()
-    if photo is None:
+    while photo is None:
         print("No photo captured. Please try again.")
+        photo = capturePhoto()
         
     prompt = receiveInput("How would you like to edit the existing drawing")
         
-    
     cropped_image = scanImageAndCrop(photo)
         
     flipped_image = cv2.flip(cropped_image, -1)
@@ -42,19 +52,31 @@ def main():
     
     contours, lineImage = processImage(edited_image)
     
-    show_images(edited_image, lineImage, titles=["Edited Image", "Contours"])
+    # show_images(edited_image, lineImage, titles=["Edited Image", "Contours"])
     
     confirmation = receiveInput("Would you like me to draw this image? (yes/no)")
     
     if "no" in confirmation.strip().lower():
         return f"he user rejected the generated image edit before it could be drawn: '{prompt}'."
     
-    # eraseImage(arm, flipped_image,
-    #         eraser_w_px=30,
-    #         eraser_h_px=20,
-    #         step_ratio=0.9,
-    #         visualize=True)
-
+    eraseImage(arm, flipped_image,
+            eraser_w_px=30,
+            eraser_h_px=20,
+            step_ratio=0.9,
+            visualize=True)
+    
+    arm.centre_position()
+    arm.change_attachment_position()
+    _ = receiveInput("Continue?")
+    
+    arm.change_mode("marker")
+    arm.reset_position()
+    
+    confirmation = receiveInput("Would you like me to start drawing? (yes/no)")
+     
+    if "no" in confirmation.strip().lower():
+        return f"he user rejected the generated image edit before it could be drawn: '{prompt}'."
+    
     draw_contours(arm, contours, lineImage.shape[:2])
     return f"The drawing of {prompt} has been complete"
         

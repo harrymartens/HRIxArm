@@ -1,12 +1,12 @@
 import cv2
 
-from ImageGeneration.generateImageOpenAI import edit_image_gpt_image_1, generate_image_gpt_image_1, image_description
-from HelperFunctions.helperFunctions import base64_to_mat, mat_to_base64, show_images, base64_to_buffer
-from ImageToVectorConversion.processImage import processImage
-from UserInput.inputController import receiveInput
-from RoboticPathMovement.moveRobot import draw_contours
-from PhotoCapture.photoCapture import capturePhoto
-from PhotoCapture.identifyMarkers import scanImageAndCrop
+from Utils.ImageGeneration.generateImageOpenAI import edit_image_gpt_image_1, generate_image_gpt_image_1, image_description
+from Utils.HelperFunctions.helperFunctions import base64_to_mat, mat_to_base64, show_images, base64_to_buffer
+from Utils.ImageToVectorConversion.processImage import processImage
+from Utils.UserInput.inputController import receiveInput
+from Utils.RoboticPathMovement.moveRobot import draw_contours
+from Utils.PhotoCapture.photoCapture import capturePhoto
+from Utils.PhotoCapture.identifyMarkers import scanImageAndCrop
 
 
 

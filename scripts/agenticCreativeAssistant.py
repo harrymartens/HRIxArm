@@ -13,14 +13,14 @@ import numpy.typing as npt
 import sounddevice as sd
 
 # ── Robot-specific modules ─────────────────────────────────────────── #
-from RoboticPathMovement.robotConfig import RoboticArm
-from AgenticTools.assistantTools import (
+from Utils.RoboticPathMovement.robotConfig import RoboticArm
+from Utils.AgenticTools.assistantTools import (
     generate_drawing,
     edit_drawing,
     capture_image,
     draw_image,
 )
-from UserInput.inputController import receiveInput   # blocking; returns str
+from Utils.UserInput.inputController import receiveInput   # blocking; returns str
 
 openai_async = AsyncOpenAI()  # gets key from env
 

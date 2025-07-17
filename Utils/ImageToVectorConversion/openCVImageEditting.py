@@ -3,7 +3,7 @@ from PIL import Image
 import numpy as np
 
 
-from HelperFunctions.helperFunctions import base64_to_mat, pil_to_mat
+from Utils.HelperFunctions.helperFunctions import base64_to_mat, pil_to_mat
 
 
 def scaleImage(image, target_width=200, target_height=200):
@@ -70,7 +70,7 @@ def binarize_drawing(image, threshold=128):
     blurred = applyGaussianSmoothing(gray)
 
     # Binarize using thresholding
-    _, binarized = cv2.threshold(blurred, threshold, 255, cv2.THRESH_BINARY)
+    _, binarized = cv2.threshold(blurred, threshold, 255, cv2.THRESH_BINARY_INV)
     cv2.imshow("Bin", binarized)
     cv2.waitKey(0)
 

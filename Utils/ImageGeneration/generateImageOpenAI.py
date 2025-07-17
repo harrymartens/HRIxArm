@@ -4,6 +4,7 @@ from openai import OpenAI
 from pathlib import Path
 import base64
 import re
+from yaspin import yaspin
 
 client = OpenAI()
 
@@ -19,7 +20,7 @@ def slugify(text: str, max_len: int = 64) -> str:
     text = re.sub(r"[^a-z0-9_\-]", "", text)
     return text[:max_len] or "image"
 
-def save_generated_image(b64_data: str, prompt: str, root_dir: str | Path = "generated_images") -> Path:
+def save_generated_image(b64_data: str, prompt: str, root_dir: str | Path = ".") -> Path:
     """
     Decodes `b64_data`, creates <root_dir>/<prompt>/image.png and returns the path.
     """
@@ -35,59 +36,72 @@ def save_generated_image(b64_data: str, prompt: str, root_dir: str | Path = "gen
         
         
 
-def generate_image_gpt_image_1(prompt):
+def generate_image_gpt_image_1(prompt: str):
     """
-    Generates an image using the gpt-image-1 model based on the original image and prompt.
+    Generates an image with the gpt-image-1 model and saves it.
     Returns the generated image in base64 format.
     """
-    result = client.images.generate(
-        model="gpt-image-1",
-        prompt=prompt + """
-        -Generate the image so that it is drawable with a single colour 5mm marker
-        """,
-        quality="medium",
-        size="1024x1536",
-    )
-    
-    image_base64 = result.data[0].b64_json
-    
-    saved_path = save_generated_image(image_base64, prompt)
-    print(f"Image saved to {saved_path}")
+    with yaspin(text="Generating image", color="cyan") as spinner:
+        try:
+            result = client.images.generate(
+                model="gpt-image-1",
+                prompt=prompt + """
+                Generate clean black and moderately simple line art with some details. Use single-pixel wide strokes.
+                """,
+                quality="medium",
+                size="1024x1536",
+            )
 
-    return image_base64
+            image_base64 = result.data[0].b64_json
+            saved_path = save_generated_image(image_base64, prompt)
+
+            spinner.ok("✅ ")
+            print(f"Image saved to {saved_path}")
+            return image_base64
+
+        except Exception as e:
+            spinner.fail("💥 ")
+            raise
 
 
-def edit_image_gpt_image_1(original_image, prompt, mask=None):
+def edit_image_gpt_image_1(original_image, prompt: str, mask=None):
     """
-    Edits an image using the gpt-image-1 model based on the original image and prompt.
-    If a mask is provided, it uses the mask to edit the image.
+    Edits an image with the gpt-image-1 model.
+    If `mask` is supplied, it’s used to constrain the edit.
     Returns the edited image in base64 format.
     """
-    if mask:
-        response = client.images.edit(
-            model="gpt-image-1",
-            image=original_image,
-            mask=mask,
-            prompt=prompt,
-            size="1024x1536",
-        )
-    else:
-        response = client.images.edit(
-            model="gpt-image-1",
-            image=original_image,
-            prompt=prompt  + """.
-            Make sure the entire image fits within the frame and is not cut off.
-                        
-            """,
-            size="1024x1536",
-        )
-        
-    image_base64 = response.data[0].b64_json
-    
-    saved_path = save_generated_image(image_base64, prompt)
-    print(f"Image saved to {saved_path}")
-    
-    return image_base64
+    with yaspin(text="Editing image", color="cyan") as spinner:
+        try:
+            if mask:
+                response = client.images.edit(
+                    model="gpt-image-1",
+                    image=original_image,
+                    mask=mask,
+                    prompt=prompt,
+                    size="1024x1536",
+                )
+            else:
+                response = client.images.edit(
+                    model="gpt-image-1",
+                    image=original_image,
+                    prompt=prompt + (
+                        "\nMake sure the entire image fits within the frame "
+                        "and is not cut off."
+                    ),
+                    size="1024x1536",
+                )
+
+            image_base64 = response.data[0].b64_json
+            saved_path = save_generated_image(image_base64, prompt)
+
+            spinner.ok("✅ ")
+            print(f"Image saved to {saved_path}")
+            return image_base64
+
+        except Exception as e:
+            spinner.fail("💥 ")  # red cross on failure
+            raise
+
 
 
 def image_description(base64_image):

@@ -27,7 +27,8 @@ def main():
 
     arm.centre_position()
     executeDrawingCommands(arm, contours, lineImage.shape[:2])
-
+    
+    arm.reset_position()
 
 if __name__ == "__main__":
     main()
