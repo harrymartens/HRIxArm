@@ -14,6 +14,7 @@ def main():
     print(f.renderText("Robot Drawer"))
 
     arm = RoboticArm()
+    arm.intermediate_position()
     arm.reset_position()
 
     prompt = receiveInput("What would you like to draw?")
@@ -25,9 +26,12 @@ def main():
 
     cv2.imshow("Generated Image", lineImage)
 
+    arm.intermediate_position()
     arm.centre_position()
     executeDrawingCommands(arm, contours, lineImage.shape[:2])
     
+    arm.centre_position()
+    arm.intermediate_position()
     arm.reset_position()
 
 if __name__ == "__main__":

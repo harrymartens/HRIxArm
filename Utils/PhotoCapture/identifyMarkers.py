@@ -61,9 +61,27 @@ def scanImageAndCrop(image):
         [width - 1, height - 1],
         [0, height - 1]
     ], dtype="float32")
+    
+    # Shrink factor in pixels (tune as needed)
+    shrink_px = 10
+
+    # Compute the centroid of the four points
+    centroid = np.mean(ordered_corners, axis=0)
+
+    # Move each corner inward toward the centroid
+    shrunken_corners = []
+    for pt in ordered_corners:
+        direction = centroid - pt
+        norm = np.linalg.norm(direction)
+        if norm > 0:
+            direction = direction / norm
+        shrunken_pt = pt + direction * shrink_px
+        shrunken_corners.append(shrunken_pt)
+
+    shrunken_corners = np.array(shrunken_corners, dtype="float32")
 
     # Compute perspective transform
-    M = cv2.getPerspectiveTransform(ordered_corners.astype("float32"), dst)
+    M = cv2.getPerspectiveTransform(shrunken_corners, dst)
     warped = cv2.warpPerspective(image, M, (width, height))
 
     return warped

@@ -16,6 +16,7 @@ from Utils.RoboticPathMovement.robotConfig import RoboticArm
 def main():
     arm = RoboticArm()
     arm.reset_position()
+    arm.centre_position()
     
     arm.calibrate_corners()
     arm.reset_position()

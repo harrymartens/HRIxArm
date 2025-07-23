@@ -2,7 +2,7 @@ from xarm.wrapper import XArmAPI
 import math
 
 class RoboticArm:
-    def __init__(self, ip='192.168.1.111', mode="marker"):
+    def __init__(self, ip='192.168.1.239', mode="marker"):
         self.arm = XArmAPI(ip)
         self.arm.clean_warn()
         self.arm.clean_error()
@@ -11,23 +11,23 @@ class RoboticArm:
         self.arm.set_state(0)
         
         if mode == "marker":
-            # self.zLowered=135.5
-            self.zLowered=126
+            self.zLowered=118
         elif mode == "erase":
-            self.zLowered=68
+            self.zLowered=59
         else:
-            self.zLowered=158
+            self.zLowered=200
         
-        # self.zRaised=170
-        self.zRaised=131
+        self.zRaised=125
         
         self.roll=180
         self.pitch = 0
         self.yaw = 0
-        self.speed=200
+        self.speed=300
+        self.speed_slow=100
+        self.mvacc=100
         
-        self.min_x = 160  # 110 Maximum
-        self.max_x = 375  
+        self.min_x = 235  # 110 Maximum
+        self.max_x = 415  # 215 dif
 
         self.min_y = -190
         self.max_y = 190
@@ -36,11 +36,11 @@ class RoboticArm:
         if mode == "marker":
             # self.zLowered=135.5
             # self.zRaised=170
-            self.zLowered=125.5
-            self.zRaised=131
+            self.zLowered=118
+            self.zRaised=125
 
         elif mode == "erase":
-            self.zLowered=68
+            self.zLowered=59
             self.zRaised=80
             
         else:
@@ -48,15 +48,8 @@ class RoboticArm:
             self.zRaised=170
             
     def change_attachment_position(self):
-        self.centre_position()
-        self.arm.set_position(200, 0, 200,
-                                    self.roll, self.pitch, self.yaw,
-                                    speed=100, mvacc=100)
-        self.arm.set_position(200, 0, 200,
-                                    90, self.pitch, self.yaw,
-                                    speed=100, mvacc=100)
-        
-            
+        self.arm.set_position(350, 0, 300, self.roll, self.pitch, self.yaw, speed=self.speed_slow, mvacc=self.mvacc)
+   
             
     def subdivide_line(self, p1, p2, max_step=0.05):
         """
@@ -175,7 +168,7 @@ class RoboticArm:
         # Attempt direct Cartesian move
         ret = self.arm.set_position(x, y, z,
                                     self.roll, self.pitch, self.yaw,
-                                    speed=self.speed, mvacc=100)
+                                    speed=self.speed, mvacc=self.mvacc)
         
         print("RET: ",ret)
         
@@ -198,7 +191,7 @@ class RoboticArm:
             ret_wp = self.arm.set_position(
                 wx, wy, wz,
                 self.roll, self.pitch, self.yaw,
-                speed=self.speed, mvacc=100
+                speed=self.speed, mvacc=self.mvacc
             )
             if ret_wp == 24:
                 # still singular: compute IK and move via servo angles
@@ -215,7 +208,7 @@ class RoboticArm:
                     angle=joints,
                     is_radian=True,
                     speed=self.speed,
-                    mvacc=100,
+                    mvacc=self.mvacc,
                     wait=False
                 )
             if ret_wp not in (0, 24):
@@ -227,27 +220,31 @@ class RoboticArm:
 
             
     def reset_position(self):
-        self.arm.set_position(-10, 150, self.zRaised, self.roll, self.pitch, self.yaw, speed=50, mvacc=50)
+        self.arm.set_position(0, -250, self.zRaised, self.roll, self.pitch, self.yaw, speed=50, mvacc=50)
+
+    def intermediate_position(self):
+        self.arm.set_position(self.max_x - self.min_x, -250, self.zRaised, self.roll, self.pitch, self.yaw, speed=100, mvacc=50)
+
 
     def centre_position(self):
-        self.arm.set_position(self.max_x - self.min_x, 0, self.zRaised, self.roll, self.pitch, self.yaw, speed=50, mvacc=50)
+        self.arm.set_position(self.max_x - self.min_x, 0, self.zRaised, self.roll, self.pitch, self.yaw, speed=100, mvacc=50)
         
     def calibrate_corners(self):
         """
         Calibrate the arm to the center of the canvas.
         """
-        self.arm.set_position(self.min_x, self.max_y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=100)
-        self.arm.set_position(self.min_x, self.max_y, self.zLowered, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=100)
-        self.arm.set_position(self.min_x, self.max_y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=100)
+        self.arm.set_position(self.min_x, self.max_y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=self.mvacc)
+        self.arm.set_position(self.min_x, self.max_y, self.zLowered, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=self.mvacc)
+        self.arm.set_position(self.min_x, self.max_y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=self.mvacc)
         
-        self.arm.set_position(self.min_x, self.min_y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=100)
-        self.arm.set_position(self.min_x, self.min_y, self.zLowered, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=100)
-        self.arm.set_position(self.min_x, self.min_y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=100)
+        self.arm.set_position(self.min_x, self.min_y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=self.mvacc)
+        self.arm.set_position(self.min_x, self.min_y, self.zLowered, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=self.mvacc)
+        self.arm.set_position(self.min_x, self.min_y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=self.mvacc)
 
-        self.arm.set_position(self.max_x, self.min_y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=100)
-        self.arm.set_position(self.max_x, self.min_y, self.zLowered, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=100)
-        self.arm.set_position(self.max_x, self.min_y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=100)
+        self.arm.set_position(self.max_x, self.min_y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=self.mvacc)
+        self.arm.set_position(self.max_x, self.min_y, self.zLowered, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=self.mvacc)
+        self.arm.set_position(self.max_x, self.min_y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=self.mvacc)
 
-        self.arm.set_position(self.max_x, self.max_y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=100)
-        self.arm.set_position(self.max_x, self.max_y, self.zLowered, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=100)
-        self.arm.set_position(self.max_x, self.max_y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=100)
+        self.arm.set_position(self.max_x, self.max_y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=self.mvacc)
+        self.arm.set_position(self.max_x, self.max_y, self.zLowered, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=self.mvacc)
+        self.arm.set_position(self.max_x, self.max_y, self.zRaised, self.roll, self.pitch, self.yaw, speed=self.speed, mvacc=self.mvacc)
