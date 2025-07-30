@@ -25,7 +25,9 @@ def main():
     contours, lineImage = processImage(image_base64)
 
     cv2.imshow("Generated Image", lineImage)
-
+    
+    _ = receiveInput("Are you ready to draw?")
+    
     arm.intermediate_position()
     arm.centre_position()
     executeDrawingCommands(arm, contours, lineImage.shape[:2])
