@@ -34,8 +34,6 @@ class RoboticArm:
         
     def change_mode(self, mode):
         if mode == "marker":
-            # self.zLowered=135.5
-            # self.zRaised=170
             self.zLowered=118
             self.zRaised=125
 
@@ -225,6 +223,8 @@ class RoboticArm:
     def intermediate_position(self):
         self.arm.set_position(self.max_x - self.min_x, -250, self.zRaised, self.roll, self.pitch, self.yaw, speed=100, mvacc=50)
 
+    def move_gohome(self):
+        self.arm.move_gohome(wait=True)
 
     def centre_position(self):
         self.arm.set_position(self.max_x - self.min_x, 0, self.zRaised, self.roll, self.pitch, self.yaw, speed=100, mvacc=50)

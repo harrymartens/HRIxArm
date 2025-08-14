@@ -21,12 +21,10 @@ def main():
 
     print(f"Generating Image of: {prompt}")
     image_base64 = generate_image_gpt_image_1(prompt)
-
     contours, lineImage = processImage(image_base64)
 
     cv2.imshow("Generated Image", lineImage)
-    
-    _ = receiveInput("Are you ready to draw?")
+    _ = receiveInput("Are you ready to draw? Make sure the pen is attached.")
     
     arm.intermediate_position()
     arm.centre_position()
