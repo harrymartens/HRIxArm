@@ -11,18 +11,17 @@ from Utils.RoboticPathMovement.robotConfig import RoboticArm
 
 
 arm = RoboticArm()
-# arm.change_mode("marker")
-# arm.reset_position()
-# arm.intermediate_position()
-# arm.change_attachment_position()
 
-# _ = receiveInput("Continue?")
+arm.intermediate_position()
+arm.change_attachment_position()
+
+_ = receiveInput("Press Enter when Eraser is attached?")
 
 arm.change_mode("erase")
-# arm.intermediate_position()
+arm.intermediate_position()
 arm.reset_position()
 
-_ = receiveInput("Continue?")
+_ = receiveInput("Press Enter when ready to capture a image of the canvas?")
 
 
 current_image = capturePhoto()
