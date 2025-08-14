@@ -1,36 +1,63 @@
 import cv2
 import numpy as np
 import random
+from scipy.spatial import distance
+
 
 from .moveRobot import draw_contours
 from Utils.ImageToVectorConversion.openCVImageEditting import binarize_drawing
 
-def plan_eraser_centers(bin_img, rect_w, rect_h, step_ratio):
+def plan_eraser_centers(bin_img, rect_w, rect_h):
     """
-    Slide a fixed-size window over the binary image in a zig-zag pattern.
-    Return two lists:
-      - centers: center point of each window that contains any drawn pixel
-      - rects: corresponding top-left coordinates of those windows
+    Plan minimal-movement eraser path using dynamic region coverage.
+    Ensures all ink is erased, avoids unnecessary extra steps.
     """
     h, w = bin_img.shape
-    step_x = max(1, int(rect_w * step_ratio))
-    step_y = max(1, int(rect_h * step_ratio))
-    centers = []
+    covered = np.zeros_like(bin_img, dtype=bool)
+
+    # 1. Get all ink pixel coordinates
+    ink_coords = np.argwhere(bin_img > 0)
+    if len(ink_coords) == 0:
+        return [], []
+
+    erase_centers = []
     rects = []
-    flip = False
-    for y in range(0, h - rect_h + 1, step_y):
-        xs = list(range(0, w - rect_w + 1, step_x))
-        if flip:
-            xs = xs[::-1]
-        flip = not flip
-        for x in xs:
-            window = bin_img[y:y+rect_h, x:x+rect_w]
-            if np.any(window):
-                cx = x + rect_w // 2
-                cy = y + rect_h // 2
-                centers.append((cx, cy))
-                rects.append((x, y))
-    return centers, rects
+
+    # 2. Start from top-left ink pixel
+    remaining = set(map(tuple, ink_coords))
+    current = min(remaining, key=lambda pt: pt[1] + pt[0])  # top-left
+    current = tuple(current)
+
+    def mark_covered(center):
+        """Mark the region covered by an erase centered at `center`."""
+        cx, cy = center
+        x1 = max(0, cx - rect_h // 2)
+        y1 = max(0, cy - rect_w // 2)
+        x2 = min(h, cx + rect_h // 2)
+        y2 = min(w, cy + rect_w // 2)
+        covered[x1:x2, y1:y2] = True
+
+    while remaining:
+        cx, cy = current
+        erase_centers.append((cy, cx))  # switch to (x, y) format for consistency
+        rects.append((cy - rect_w // 2, cx - rect_h // 2))
+        mark_covered((cx, cy))
+
+        # 3. Remove covered ink pixels
+        newly_remaining = []
+        for pt in remaining:
+            if not covered[pt]:
+                newly_remaining.append(pt)
+        remaining = set(newly_remaining)
+
+        if not remaining:
+            break
+
+        # 4. Pick the nearest uncovered ink point to current position
+        dists = distance.cdist([current], list(remaining))
+        current = list(remaining)[np.argmin(dists)]
+
+    return erase_centers, rects
 
 def eraseImage(arm, img, eraser_w_px=50, eraser_h_px=30, step_ratio=0.5, visualize=True):
     bin_img = binarize_drawing(img)
@@ -38,13 +65,14 @@ def eraseImage(arm, img, eraser_w_px=50, eraser_h_px=30, step_ratio=0.5, visuali
     bin_img = cv2.flip(bin_img, 0)
     
     # 2) Plan eraser centers and rectangles
-    centers, rects = plan_eraser_centers(bin_img, eraser_w_px, eraser_h_px, step_ratio)
+    centers, rects = plan_eraser_centers(bin_img, eraser_w_px, eraser_h_px)
     # 3) Treat all centers as one continuous path
     segments = [centers]
 
     # 4) Visualization
     if visualize:
         vis = img.copy()
+        vis = cv2.flip(vis, 0)
         # draw each rectangle window in green
         for (rx, ry) in rects:
             cv2.rectangle(vis, (rx, ry), (rx + eraser_w_px, ry + eraser_h_px), (0,255,0), 1)

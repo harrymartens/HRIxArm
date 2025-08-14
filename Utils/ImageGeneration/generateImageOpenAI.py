@@ -85,8 +85,7 @@ def edit_image_gpt_image_1(original_image, prompt: str, mask=None):
                     model="gpt-image-1",
                     image=original_image,
                     prompt=prompt + (
-                        "\nMake sure the entire image fits within the frame "
-                        "and is not cut off."
+                        "Generate clean black and moderately simple line art with some details. Use single-pixel wide strokes."
                     ),
                     size="1024x1536",
                 )
