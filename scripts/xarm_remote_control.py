@@ -10,17 +10,17 @@ ROBOT_IP = "192.168.1.111"
 # Movement bounds
 BOUND_X_MIN, BOUND_X_MAX = 175, 330
 BOUND_Y_MIN, BOUND_Y_MAX = -285, 285
-BOUND_Z_MIN, BOUND_Z_MAX = 136, 400
+BOUND_Z_MIN, BOUND_Z_MAX = 158, 400
 PITCH_MIN, PITCH_MAX = -90, 90
 
 # Sensitivity
 SPEED_XY = 1.0      # mm per loop
 SPEED_Z = 1.0       # mm per loop
-PITCH_STEP = 2.0    # degrees per step/loop
+PITCH_STEP = 1.0    # degrees per step/loop
 DEADZONE = 0.1
 
 # Initial pose/orientation (fightstick starting pose kept)
-INIT_POSE = {"x": 171.0, "y": 0.0, "z": 156.0}
+INIT_POSE = {"x": 200.0, "y": 0.0, "z": 200.0}
 INIT_ORI  = {"roll": 180.0, "pitch": 0.0, "yaw": 0.0}
 
 # ====== Helpers ======
@@ -33,12 +33,11 @@ def apply_deadzone(v, dz=DEADZONE):
 def connect_robot():
     arm = XArmAPI(ROBOT_IP)
     arm.motion_enable(True)
-    arm.set_collision_sensitivity(2)     # reduce false positives
+    arm.set_collision_sensitivity(5)     # reduce false positives
     arm.set_mode(0)                      # Position mode
     arm.set_state(0)
-    arm.move_gohome(wait=True)
     # Safe ready pose
-    arm.set_position(171, 0, 156, 180, 0, 0, wait=True, speed=100)
+    arm.set_position(200, 0, 200, 180, 0, 0, speed=5, wait=True)
     # Switch to Cartesian servo mode
     arm.set_mode(1)
     arm.set_state(0)
