@@ -1,4 +1,8 @@
 # Human–Robot Interaction (HRI) xArm Drawing Robot
+
+# NOTE: THIS REPO IS NOT THE MOST RECENT VERSION OF THE PROJECT
+**Continue to for the most up to date version:https://github.com/harrymartens/AI-Robot-Artist**
+
 Generative AI meets a 6‑axis xArm to draw, edit, and erase images on an acrylic canvas using AprilTag‑based alignment.
 
 ## 1) Requirements
